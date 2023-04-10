@@ -223,5 +223,5 @@ const rating = asyncHandler(async (req, res) => {
 });
 
 module.exports = { createProduct, getaProduct, getAllProduct, updateProduct, deleteProduct, 
-addToWishlist, clearWishlist, rating         
+addToWishlist, clearWishlist, rating,      
 };
