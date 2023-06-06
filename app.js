@@ -1,47 +1,61 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const app =express();
+const cors = require("cors"); // Add this line
+const app = express();
 const dotenv = require("dotenv").config();
 const dbConnect = require("./config/dbConnect");
 const { notFound, errorHandler } = require("./middlewares/errorHandler");
 const PORT = process.env.PORT || 5000;
 
-const authRouter = require("./routes/authRoute");
-const productRouter = require("./routes/productRoute");
-const blogRouter = require("./routes/blogRoute");
-const pCategoryRouter = require("./routes/prodcategoryRoute")
-const blogCategoryRouter = require("./routes/blogCategoryRoute")
-const brandRouter = require("./routes/brandRoute");
-// const colorRouter = require("./routes/colorRoute");
-// const enqRouter = require("./routes/enqRoute");
-const couponRouter = require("./routes/couponRoute");
-const uploadRouter = require("./routes/uploadRoute");
-
-const cookieParser = require("cookie-parser");
-const morgan = require("morgan");
+const cloudinary = require("cloudinary").v2;
+const multer = require("multer");
 
 dbConnect();
 
-app.use(morgan("dev"));
+app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser())
 
+app.use(cors()); // Add this line
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "images");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Middleware to handle form-data
+app.use(upload.single("image"));
+
+app.post("/upload", async (req, res) => {
+  try {
+    const result = await cloudinary.uploader.upload(req.file.path);
+    res.status(200).json({ imageUrl: result.secure_url });
+  } catch (err) {
+    res.status(500).json({ error: "Image upload failed" });
+  }
+});
+
+const authRouter = require("./routes/authRoute");
+const blogRoute = require("./routes/blog");
 
 app.use("/user", authRouter);
-app.use("/product", productRouter);
-app.use("/blog", blogRouter);
-app.use("/pcategory", pCategoryRouter);
-app.use("/bcategory", blogCategoryRouter);
-app.use("/brand", brandRouter);
-app.use("/coupon", couponRouter);
-// app.use("/color", colorRouter);
-// app.use("/enquiry", enqRouter);
-app.use("/upload", uploadRouter);
-
+app.use("/blog", blogRoute);
 
 app.use(notFound);
 app.use(errorHandler);
+
 app.listen(PORT, () => {
-    console.log(`server is running on PORT ${PORT}`)
-}); 
+  console.log(`Server is running on PORT ${PORT}`);
+});
