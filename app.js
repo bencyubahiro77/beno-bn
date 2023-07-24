@@ -50,10 +50,12 @@ app.post("/upload", async (req, res) => {
 const authRouter = require("./routes/authRoute");
 const blogRoute = require("./routes/blog");
 const ContactRoute = require("./routes/Contact")
+const BookingRoute = require("./routes/booking")
 
 app.use("/user", authRouter);
 app.use("/blog", blogRoute);
 app.use("/contact", ContactRoute);
+app.use("/booking", BookingRoute);
 
 app.use(notFound);
 app.use(errorHandler);
